@@ -1,0 +1,72 @@
+================================================================================
+Comprehensive Evaluation: LIME vs Zero-DCE++
+================================================================================
+Output will be saved to: evaluation_results_20251207_154610.txt
+================================================================================
+
+Directories:
+  Original: ../selected_700_lowlight/original
+  LIME:     ../selected_700_lowlight/LIME_enhanced
+  Zero-DCE++: ../selected_700_lowlight/result_Zero_DCE++
+
+Metrics Status:
+  PSNR/SSIM: Available
+  PyTorch: Available
+  LPIPS: Available
+  BRISQUE: Available
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: D:\Anaconda\Anaconda3\envs\253\lib\site-packages\lpips\weights\v0.1\alex.pth
+LPIPS initialized successfully.
+SPAQ checkpoint loaded successfully from BL_release.pt
+
+Finding matching files...
+Matching files by filename similarity...
+Found 700 matching image pairs (matched by filename similarity)
+Found 700 matching image pairs.
+
+TEST MODE: Processing only first 300 images
+
+Processing images...
+
+================================================================================
+EVALUATION RESULTS
+================================================================================
+
+Metric       LIME                 Zero-DCE++           Winner         
+--------------------------------------------------------------------------------
+PSNR         19.1017±1.4369 dB    12.3471±0.0443 dB    LIME           
+SSIM         0.9264±0.0246        0.7268±0.0737        LIME           
+LPIPS        0.0809±0.0093        0.1967±0.0122        LIME           
+BRISQUE      42.4111±8.2225       48.6620±13.8647      LIME           
+SPAQ         55.7858±6.7400       49.6581±7.5268       LIME           
+
+================================================================================
+DETAILED STATISTICS
+================================================================================
+
+PSNR (Higher is better)
+  LIME:      Mean=19.1017, Std=1.4369, Min=16.2223, Max=22.5992
+  Zero-DCE++: Mean=12.3471, Std=0.0443, Min=12.2502, Max=12.4893
+
+SSIM (Higher is better)
+  LIME:      Mean=0.9264, Std=0.0246, Min=0.8649, Max=0.9714
+  Zero-DCE++: Mean=0.7268, Std=0.0737, Min=0.5435, Max=0.8592
+
+LPIPS (Lower is better)
+  LIME:      Mean=0.0809, Std=0.0093, Min=0.0581, Max=0.1024
+  Zero-DCE++: Mean=0.1967, Std=0.0122, Min=0.1609, Max=0.2242
+
+BRISQUE (Lower is better)
+  LIME:      Mean=42.4111, Std=8.2225, Min=26.3319, Max=63.3412
+  Zero-DCE++: Mean=48.6620, Std=13.8647, Min=30.6699, Max=85.4315
+
+SPAQ (Higher is better)
+  LIME:      Mean=55.7858, Std=6.7400, Min=34.7297, Max=67.7672
+  Zero-DCE++: Mean=49.6581, Std=7.5268, Min=32.7421, Max=63.4143
+
+================================================================================
+Total images evaluated: 300
+================================================================================
+
+Results saved to: evaluation_results_20251207_154610.txt
+================================================================================
