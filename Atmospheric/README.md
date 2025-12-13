@@ -221,7 +221,7 @@ PYTHONPATH="./:${PYTHONPATH}" \
 python Dehazing/test_dehaze_custom.py \
   --input_dir Dehazing/Datasets/myDataset/Real/Fog \
   --output_dir Dehazing/Datasets/myDataset/Real/FogOutput \
-  --ckpt Dehazing/experiments/Finetune_RealFog_Restormer/models/net_g_20000.pth \
+  --ckpt Finetune_RealFog_Restormer/models/net_g_20000.pth \
   --opt Dehazing/Options/Finetune_RealFog_Restormer.yml \
   --gpu 0
 ```
