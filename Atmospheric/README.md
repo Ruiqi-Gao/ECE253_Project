@@ -234,13 +234,14 @@ If you have paired `hazy` and `gt` folders (same filenames), run:
 
 ```bash
 PYTHONPATH="./:${PYTHONPATH}" \
-python Dehazing/test_dehaze_eval.py \
-  --input_dir Dehazing/Datasets/SOTS_Outdoor/val/hazy_mod8 \
-  --gt_dir    Dehazing/Datasets/SOTS_Outdoor/val/gt_mod8 \
-  --output_dir Dehazing/Datasets/SOTS_Outdoor/val/dehazed_eval \
-  --ckpt Dehazing/experiments/Dehazing_SOTS_Outdoor_Restormer_big/models/net_g_80000.pth \
-  --opt Dehazing/Options/Dehazing_SOTS_Outdoor_Restormer_big.yml \
-  --gpu 0
+python test_dehaze_eval.py \
+  --input_dir Dehazing/Datasets/myDataset/Real/eval/hazy \
+  --gt_dir    Dehazing/Datasets/myDataset/Real/eval/gt \
+  --output_dir Dehazing/Datasets/myDataset/Real/eval/dehazed_eval \
+  --ckpt Finetune_RealFog_Restormer/models/net_g_20000.pth \
+  --opt Dehazing/Options/Finetune_RealFog_Restormer.yml \
+  --gpu 0 \
+  --save_csv Dehazing/Datasets/myDataset/Real/eval/metrics_eval.csv
 ```
 
 The script prints average PSNR/SSIM across the dataset and saves dehazed outputs.
@@ -282,10 +283,3 @@ Relevant source code used in our submission:
 * [x] Dataset directory layout + download links placeholder
 * [x] Pretrained model paths + download links placeholder
 
----
-
-If你把以下信息补给我，我可以把 README 里的 “link here / net_g_xxx.pth” 全部替换成你实际内容并做一次最终校对：
-
-1. SOTS Outdoor 下载方式（链接或你放到哪里）
-2. 你最终用于对比的 checkpoint 文件名（SOTS 预训练 & Real fine-tune）
-3. 你真实数据集的目录名（Fog/Clear 是否就是这两个）
