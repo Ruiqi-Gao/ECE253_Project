@@ -1,0 +1,140 @@
+###################
+#  Dehazing SOTS Outdoor - Restormer
+###################
+
+name: Dehazing_SOTS_Outdoor_Restormer
+model_type: ImageCleanModel
+scale: 1
+num_gpu: 1          # 单卡训练；如果用 train.sh 分布式，这个会被覆盖
+manual_seed: 100
+
+###################
+# Datasets
+###################
+datasets:
+  train:
+    name: SOTS_Outdoor_train
+    type: Dataset_PairedImage           # 一定要是 Dataset_PairedImage（跟 Deraining 一致）
+    dataroot_gt: ./Dehazing/Datasets/SOTS_Outdoor/train/gt
+    dataroot_lq: ./Dehazing/Datasets/SOTS_Outdoor/train/hazy
+
+    # 数据增强 & IO
+    geometric_augs: true
+    filename_tmpl: '{}'                 # 文件名模板
+    io_backend:
+      type: disk
+
+    # ------------ dataloader 设置（关键是这三行）-------------
+    use_shuffle: true
+    num_worker_per_gpu: 2          # 1080Ti 建议 4，嫌吵可以改 2
+    batch_size_per_gpu: 1          # 显存不够就改成 1
+
+    # 迭代 & batch 设置（按你的显存可调）
+    mini_batch_sizes: [4]               # 单卡 batch_size；显存不够就改成 [2] 或 [1]
+    iters: [200000]                     # 总迭代次数
+    gt_size: 192                        # 训练 patch 尺寸（最大）
+    gt_sizes: [192]                     # 只采样 256x256 patch；也可写多档 [128,160,192,256]
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~                    # 关闭 prefetch
+
+  val:
+    name: SOTS_Outdoor_val
+    type: Dataset_PairedImage
+    dataroot_gt: ./Dehazing/Datasets/SOTS_Outdoor/val/gt_mod8
+    dataroot_lq: ./Dehazing/Datasets/SOTS_Outdoor/val/hazy_mod8
+    io_backend:
+      type: disk
+
+###################
+# Network
+###################
+network_g:
+  type: Restormer
+  inp_channels: 3
+  out_channels: 3
+  dim: 32
+  num_blocks: [3, 4, 4, 6]
+  num_refinement_blocks: 4
+  heads: [1, 2, 4, 8]
+  ffn_expansion_factor: 2.66
+  bias: False
+  LayerNorm_type: WithBias
+  dual_pixel_task: False               # 去雾任务设为 False
+
+###################
+# Paths
+###################
+path:
+  pretrain_network_g: ~                # 从头训练；若后面 finetune 再填 ckpt 路径
+  strict_load_g: true
+  resume_state: ~
+  experiments_root: ./Dehazing/experiments/Dehazing_SOTS_Outdoor_Restormer
+
+###################
+# Training settings
+###################
+train:
+  optim_g:
+    type: AdamW
+    lr: 3.0e-4
+    betas: [0.9, 0.999]
+    weight_decay: 0.02
+
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [50000]                  # 与 total_iter 一致，单周期
+    restart_weights: [1]
+    eta_min: 1.0e-6
+
+  total_iter: 50000
+  warmup_iter: -1                      # 不使用 warmup
+
+  # 是否使用梯度裁剪（Restormer 原实现一般会开一个很小的 clip）
+  use_grad_clip: true
+  grad_clip: 0.01
+
+  # 像素级损失
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+  mixing_augs:
+    mixup: false
+    mixup_beta: 1.2
+    use_identity: true
+###################
+# Validation
+###################
+val:
+  val_freq: 10000                       # 每 5000 iter 验证一次
+  save_img: true
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+
+###################
+# Logger
+###################
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 5000
+  use_tb_logger: true
+  use_wandb: false                     # 关闭 wandb，避免你之前 charset_normalizer 那个错误
+  wandb:
+    project: Dehazing_SOTS_Outdoor
+    resume_id: ~
+
+###################
+# Distributed settings
+###################
+dist_params:
+  backend: nccl
+  port: 29500

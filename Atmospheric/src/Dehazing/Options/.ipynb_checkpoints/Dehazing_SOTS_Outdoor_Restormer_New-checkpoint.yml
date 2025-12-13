@@ -1,0 +1,145 @@
+###################
+#  Dehazing SOTS Outdoor - Restormer (improved)
+###################
+
+name: Dehazing_SOTS_Outdoor_Restormer
+model_type: ImageCleanModel
+scale: 1
+num_gpu: 1          # 单卡训练
+manual_seed: 100
+
+###################
+# Datasets
+###################
+datasets:
+  train:
+    name: SOTS_Outdoor_train
+    type: Dataset_PairedImage
+    dataroot_gt: ./Dehazing/Datasets/SOTS_Outdoor/train/gt
+    dataroot_lq: ./Dehazing/Datasets/SOTS_Outdoor/train/hazy
+
+    # 数据增强 & IO
+    geometric_augs: true
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    # dataloader 设置
+    use_shuffle: true
+    num_worker_per_gpu: 2
+    batch_size_per_gpu: 1          # 1080Ti 上安全的设置
+
+    # 多尺度训练相关（与上面的 batch 对齐）
+    mini_batch_sizes: [1]
+    iters: [80000]                 # 与 total_iter 对齐（只有一个阶段）
+    gt_size: 160                   # patch 稍微小一点，留显存给更大的模型
+    gt_sizes: [160]
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+  val:
+    name: SOTS_Outdoor_val
+    type: Dataset_PairedImage
+    dataroot_gt: ./Dehazing/Datasets/SOTS_Outdoor/val/gt_mod8
+    dataroot_lq: ./Dehazing/Datasets/SOTS_Outdoor/val/hazy_mod8
+    io_backend:
+      type: disk
+
+###################
+# Network
+###################
+network_g:
+  type: Restormer
+  inp_channels: 3
+  out_channels: 3
+
+  # ★ 模型加大：接近原版 Restormer 配置
+  dim: 48
+  num_blocks: [4, 6, 6, 8]
+  num_refinement_blocks: 4
+  heads: [1, 2, 4, 8]
+  ffn_expansion_factor: 2.66
+  bias: False
+  LayerNorm_type: WithBias
+  dual_pixel_task: False
+
+###################
+# Paths
+###################
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+  resume_state: ~
+  experiments_root: ./Dehazing/experiments/Dehazing_SOTS_Outdoor_Restormer_big
+
+###################
+# Training settings
+###################
+train:
+  optim_g:
+    type: AdamW
+    lr: 3.0e-4
+    betas: [0.9, 0.999]
+    weight_decay: 0.02
+
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [80000]              # 单周期，对应 total_iter
+    restart_weights: [1]
+    eta_min: 1.0e-6
+
+  total_iter: 80000               # 比原来 50k 更充分一点
+  warmup_iter: -1
+
+  use_grad_clip: true
+  grad_clip: 0.01
+
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+  # 可以保留 mixup 配置（目前相当于关闭）
+  mixing_augs:
+    mixup: false
+    mixup_beta: 1.2
+    use_identity: true
+
+  # （可选）如果你之前已经确认 AMP 没问题，也可以打开：
+  # use_amp: true
+
+###################
+# Validation
+###################
+val:
+  val_freq: 8000                   # 80k 总迭代，每 8k 验证一次
+  save_img: true
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+
+###################
+# Logger
+###################
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 8000       # 和 val_freq 对齐，方便对比
+  use_tb_logger: true
+  use_wandb: false
+  wandb:
+    project: Dehazing_SOTS_Outdoor
+    resume_id: ~
+
+###################
+# Distributed settings
+###################
+dist_params:
+  backend: nccl
+  port: 29500
